@@ -59,3 +59,29 @@ resource "aws_ssm_parameter" "twitter_token" {
     ]
   }
 }
+
+## DynamoDB table for tracking alerts
+resource "aws_dynamodb_table" "alert_db" {
+  name = "ActiveAlerts"
+  billing_mode = "PROVISIONED"
+  table_class = "STANDARD"
+  read_capacity = 1
+  write_capacity = 1
+  hash_key = "Route"
+  range_key = "Created"
+
+  attribute {
+    name = "Route"
+    type = "S"
+  }
+
+  attribute {
+    name = "Created"
+    type = "N"
+  }
+
+  ttl {
+    attribute_name = "Expires"
+    enabled = true
+  }
+}
