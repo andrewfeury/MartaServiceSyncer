@@ -1,6 +1,7 @@
 terraform {
   backend "s3" {
-    bucket = "coming-soon"
+    # configure backend locally using file or command line
+    # see: https://developer.hashicorp.com/terraform/language/settings/backends/configuration#partial-configuration
   }
   required_providers {
     aws = {
@@ -12,6 +13,26 @@ terraform {
 
 provider "aws" {
   region = "us-east-1"
+  default_tags {
+    tags = {
+      ManagedBy = "https://github.com/andrewfeury/MartaServiceSyncer"
+    }
+  }
 }
 
-# Implementation coming soon
+## Parameters for Twitter API
+resource "aws_ssm_parameter" "twitter_key" {
+  name           = "/MartaServiceSyncer/TwitterAPI/KeyID"
+  type           = "String"
+  overwrite      = false
+  tier           = "Standard"
+  insecure_value = "UPDATE_ME"
+}
+
+resource "aws_ssm_parameter" "twitter_secret" {
+  name           = "/MartaServiceSyncer/TwitterAPI/KeySecret"
+  type           = "String"
+  overwrite      = false
+  tier           = "Standard"
+  insecure_value = "UPDATE_ME"
+}
