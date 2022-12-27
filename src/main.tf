@@ -27,6 +27,11 @@ resource "aws_ssm_parameter" "twitter_key" {
   overwrite      = false
   tier           = "Standard"
   insecure_value = "UPDATE_ME"
+  lifecycle {
+    ignore_changes = [
+      value, insecure_value
+    ]
+  }
 }
 
 resource "aws_ssm_parameter" "twitter_secret" {
@@ -35,4 +40,22 @@ resource "aws_ssm_parameter" "twitter_secret" {
   overwrite      = false
   tier           = "Standard"
   insecure_value = "UPDATE_ME"
+  lifecycle {
+    ignore_changes = [
+      value, insecure_value
+    ]
+  }
+}
+
+resource "aws_ssm_parameter" "twitter_token" {
+  name           = "/MartaServiceSyncer/TwitterAPI/BearerToken"
+  type           = "String"
+  overwrite      = false
+  tier           = "Standard"
+  insecure_value = "UPDATE_ME"
+  lifecycle {
+    ignore_changes = [
+      value, insecure_value
+    ]
+  }
 }
