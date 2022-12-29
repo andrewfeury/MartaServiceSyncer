@@ -21,32 +21,6 @@ provider "aws" {
 }
 
 ## Parameters for Twitter API
-resource "aws_ssm_parameter" "twitter_key" {
-  name           = "/MartaServiceSyncer/TwitterAPI/KeyID"
-  type           = "String"
-  overwrite      = false
-  tier           = "Standard"
-  insecure_value = "UPDATE_ME"
-  lifecycle {
-    ignore_changes = [
-      value, insecure_value
-    ]
-  }
-}
-
-resource "aws_ssm_parameter" "twitter_secret" {
-  name           = "/MartaServiceSyncer/TwitterAPI/KeySecret"
-  type           = "String"
-  overwrite      = false
-  tier           = "Standard"
-  insecure_value = "UPDATE_ME"
-  lifecycle {
-    ignore_changes = [
-      value, insecure_value
-    ]
-  }
-}
-
 resource "aws_ssm_parameter" "twitter_token" {
   name           = "/MartaServiceSyncer/TwitterAPI/BearerToken"
   type           = "String"
