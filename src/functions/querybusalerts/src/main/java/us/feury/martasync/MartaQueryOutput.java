@@ -17,6 +17,7 @@
 package us.feury.martasync;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -35,8 +36,8 @@ public class MartaQueryOutput {
 
     private MartaServiceTweet mergeTweets(MartaServiceTweet existing, MartaServiceTweet update) {
         
-        if (LocalDateTime.parse(update.getLastUpdated())
-                .isAfter(LocalDateTime.parse(existing.getLastUpdated()))) {
+        if (ZonedDateTime.parse(update.getLastUpdated())
+                .isAfter(ZonedDateTime.parse(existing.getLastUpdated()))) {
             // New tweet is more recent
             String newText = String.join("\n\n", update.getText(), existing.getText());
             return new MartaServiceTweet(update.getLastUpdated(), newText);
