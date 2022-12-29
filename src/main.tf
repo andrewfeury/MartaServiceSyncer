@@ -23,6 +23,7 @@ provider "aws" {
 ## Locals
 locals {
   apisync_name = "MartaTweetSync"
+  dbquery_name = "MartaTweetQuery"
   parameter_path = "/MartaServiceSyncer/TwitterAPI"
 }
 
@@ -190,4 +191,94 @@ resource "aws_lambda_permission" "allow_scheduled_event" {
   function_name = aws_lambda_function.apisync.function_name
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.trigger_api_sync.arn
+}
+
+## MartaTweetQuery
+resource "aws_lambda_function" "query" {
+  function_name    = local.dbquery_name
+  role             = aws_iam_role.for_query.arn
+  description      = "Queries locally processed @MartaService alerts from DynamoDB"
+  runtime          = "java11"
+  architectures    = ["x86_64"]
+  filename         = "${path.module}/functions/querybusalerts/target/querybusalerts.jar"
+  source_code_hash = filebase64sha256("${path.module}/functions/querybusalerts/target/querybusalerts.jar")
+  handler          = "us.feury.martasync.MartaQueryFunction"
+  timeout          = 15
+  memory_size      = 512
+
+  depends_on = [
+    null_resource.build_query,
+    aws_cloudwatch_log_group.for_query,
+    aws_iam_role_policy_attachment.for_query
+  ]
+}
+
+resource "null_resource" "build_query" {
+  provisioner "local-exec" {
+    command = "mvn package -f ${path.module}/functions/querybusalerts/pom.xml"
+  }
+}
+
+resource "aws_cloudwatch_log_group" "for_query" {
+  name              = "/aws/lambda/${local.dbquery_name}"
+  retention_in_days = 14
+}
+
+resource "aws_iam_role" "for_query" {
+  name = "lambda_role_${local.dbquery_name}"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action    = "sts:AssumeRole"
+        Effect    = "Allow"
+        Principal = {
+          Service: "lambda.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_policy" "for_query" {
+  name = "lambda_policy_${local.dbquery_name}"
+  path = "/"
+  description = "IAM policy for the ${local.dbquery_name} lambda"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid      = "WriteCloudwatchLogs"
+        Action   = [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Effect   = "Allow"
+        Resource = [
+          "${aws_cloudwatch_log_group.for_query.arn}",
+          "${aws_cloudwatch_log_group.for_query.arn}:log-stream:*"
+        ]
+      },
+      {
+        Sid      = "ReadDynamoDB"
+        Action   = [
+            "dynamodb:DescribeTable",
+            "dynamodb:GetItem",
+            "dynamodb:BatchGetItem",
+            "dynamodb:Scan",
+            "dynamodb:Query",
+            "dynamodb:ConditionCheckItem"
+        ]
+        Effect   = "Allow"
+        Resource = [
+          "${aws_dynamodb_table.alert_db.arn}",
+          "${aws_dynamodb_table.alert_db.arn}/index/*"
+        ]
+      }
+    ]
+  })
+}
+resource "aws_iam_role_policy_attachment" "for_query" {
+  role       = aws_iam_role.for_query.name
+  policy_arn = aws_iam_policy.for_query.arn
 }
