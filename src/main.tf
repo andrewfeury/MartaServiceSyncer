@@ -101,10 +101,6 @@ resource "aws_cloudwatch_log_group" "for_apisync" {
   retention_in_days = 14
 }
 
-//resource "aws_lambda_permission" "allow_scheduled_event" {
-//  # TODO: permission for event to trigger lambda
-//}
-
 resource "aws_iam_role" "for_apisync" {
   name = "lambda_role_${local.apisync_name}"
   assume_role_policy = jsonencode({
@@ -175,4 +171,23 @@ resource "aws_iam_policy" "for_apisync" {
 resource "aws_iam_role_policy_attachment" "for_apisync" {
   role       = aws_iam_role.for_apisync.name
   policy_arn = aws_iam_policy.for_apisync.arn
+}
+
+resource "aws_cloudwatch_event_rule" "trigger_api_sync" {
+  name                = "trigger_${local.apisync_name}"
+  description         = "Recurring timer to trigger a Marta tweet sync"
+  schedule_expression = "rate(${var.api_sync_period_in_minutes} minutes)"
+}
+
+resource "aws_cloudwatch_event_target" "trigger_api_sync" {
+  rule = aws_cloudwatch_event_rule.trigger_api_sync.name
+  arn = aws_lambda_function.apisync.arn
+}
+
+resource "aws_lambda_permission" "allow_scheduled_event" {
+  statement_id  = "Execute${local.apisync_name}OnSchedule"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.apisync.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.trigger_api_sync.arn
 }
