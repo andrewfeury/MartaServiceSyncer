@@ -17,6 +17,7 @@
 package us.feury.martasync;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -89,10 +90,13 @@ public class MartaQueryFunction implements RequestHandler<MartaQueryInput, Marta
     private MartaQueryOutput queryTweetsByRoute(String route) {
 
         // Build a query for the route with created time descending
+        Map<String,AttributeValue> queryAttribute = new HashMap<>();
+        queryAttribute.put(":route", AttributeValue.fromS(route));
         QueryRequest query = 
                 QueryRequest.builder()
                             .tableName(DYNAMODB_TABLE_NAME)
-                            .keyConditionExpression(route)
+                            .keyConditionExpression("Route = :route")
+                            .expressionAttributeValues(queryAttribute)
                             .scanIndexForward(false)
                             .build();
         QueryResponse response = this.dynamoDbClient.query(query);
