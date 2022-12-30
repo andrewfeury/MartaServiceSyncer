@@ -21,6 +21,10 @@ public class MartaServiceTweet {
     private String lastUpdated;
     private String text;
     
+    public MartaServiceTweet() {
+        // empty tweet is returned when no data exists for a queried route
+    }
+
     public MartaServiceTweet(String lastUpdated, String text) {
         this.lastUpdated = lastUpdated;
         this.text = text;

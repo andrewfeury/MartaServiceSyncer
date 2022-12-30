@@ -104,6 +104,10 @@ public class MartaQueryFunction implements RequestHandler<MartaQueryInput, Marta
         // Parse response
         final MartaQueryOutput result = new MartaQueryOutput();
         response.items().forEach(m->parseToResult(m,result));
+
+        // Ensure an empty route is added to the response if no alerts are present
+        result.getTweetsByRoute().putIfAbsent(route, new MartaServiceTweet());
+
         return result;
     }
 
