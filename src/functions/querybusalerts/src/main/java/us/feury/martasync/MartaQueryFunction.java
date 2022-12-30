@@ -80,7 +80,7 @@ public class MartaQueryFunction implements RequestHandler<MartaQueryInput, Marta
     public MartaQueryOutput handleRequest(final MartaQueryInput input, final Context context) {
         
         Optional<String> route = Optional.ofNullable(input.getRoute());
-        if (route.isPresent()) {
+        if (route.isPresent() && !route.get().isEmpty()) {
             return queryTweetsByRoute(route.get());
         } else {
             return queryTweetsAll();
