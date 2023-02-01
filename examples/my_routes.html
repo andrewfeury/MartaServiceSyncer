@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <title>My Favorite Bus Routes</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1, shrink-to-fit=no'>
+    <style>
+        .container {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                display: flex;
+                flex-direction: column;
+                flex-wrap: wrap;
+            }
+        }
+        
+        .routebox {
+            background-color: #f1f1f1;
+            margin: 10px;
+            padding: 10px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .routeOK {
+            background-color: #d0ffe9;
+        }
+
+        .routeNOK {
+            background-color: #fccece;
+        }
+
+        .routeNumber {
+            padding: 10px;
+            font-size: 40px;
+        }
+
+        .dateUpdated {
+            font-size: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container"></div>
+
+    <template id="widgetTpl">
+        <div class="routebox">
+            <table>
+                <tr>
+                    <td class="routeNumber">$route</td>
+                    <td>
+                        <p>$body</p>
+                        <p class="dateUpdated">$date</p>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </template>
+
+    <script>
+        const routes = [21, 24, 34];
+
+        const doFetch = async (routeId) => {
+            const url = 'https://marta-alerts.aws.feury.us/latest/busalerts?route='+routeId;
+            const response = await fetch(url);
+            if (response.ok) {
+                const body = await response.json();
+                return Promise.resolve(body);
+            } else {
+                console.log(response.status);
+                console.log(response.body);
+                return Promise.reject("Failed to call API");
+            }
+        }
+
+        function renderRoute(div, route) {
+            doFetch(route).then(jsonResponse => {
+                const alert = jsonResponse.tweetsByRoute[route];
+                substitute(div, "$route", route);
+
+                if (alert.text===undefined) {
+                    div.classList.add("routeOK");
+                    substitute(div, "$body", "No delays or cancellations");
+                    substitute(div, "$date", new Date());
+                } else {
+                    div.classList.add("routeNOK");
+                    substitute(div, "$body", alert.text);
+                    substitute(div, "$date", new Date(alert.lastUpdated));
+                }
+            }).catch(console.log);
+        }
+
+        function substitute(div, key, value) {
+            div.innerHTML = div.innerHTML.replace(key, value);
+        }
+
+        function makeRouteWidgets() {
+            const container = document.getElementsByClassName("container").item(0);
+            const tpl = document.getElementById("widgetTpl").content.querySelector("div");
+            routes.forEach(route => {
+                var widget = document.importNode(tpl, true);
+                renderRoute(widget, route);
+                container.appendChild(widget);
+            })
+        }
+
+        window.onload=makeRouteWidgets();
+    </script>
+</body>
+</html>
