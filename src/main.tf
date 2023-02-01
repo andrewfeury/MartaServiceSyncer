@@ -352,7 +352,7 @@ resource "aws_lambda_permission" "allow_agw_execution" {
 resource "aws_api_gateway_deployment" "query_api" {
   rest_api_id = aws_api_gateway_rest_api.query_api.id
 
-  /* triggers = {
+  triggers = {
     redeployment = sha1(jsonencode([
       aws_api_gateway_resource.bus_alerts.id,
       aws_api_gateway_method.get_bus_alerts.id,
@@ -360,7 +360,7 @@ resource "aws_api_gateway_deployment" "query_api" {
       aws_api_gateway_integration.get_bus_alerts_lambda.id,
       aws_api_gateway_integration_response.get_bus_alerts_lambda_ok.id
     ]))
-  } */
+  }
 
   lifecycle {
     create_before_destroy = true
@@ -372,4 +372,15 @@ resource "aws_api_gateway_stage" "default" {
   rest_api_id   = aws_api_gateway_rest_api.query_api.id
   stage_name    = "default"
   description   = "Default API stage"
+}
+
+module "api-gateway-enable-cors" {
+  source          = "squidfunk/api-gateway-enable-cors/aws"
+  version         = "0.3.3"
+  api_id          = aws_api_gateway_rest_api.query_api.id
+  api_resource_id = aws_api_gateway_resource.bus_alerts.id
+  allow_methods = [ aws_api_gateway_method.get_bus_alerts.http_method ]
+
+  # TODO: limit to final deployed origin
+  allow_origin = "*"
 }
