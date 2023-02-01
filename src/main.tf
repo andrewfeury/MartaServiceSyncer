@@ -282,3 +282,86 @@ resource "aws_iam_role_policy_attachment" "for_query" {
   role       = aws_iam_role.for_query.name
   policy_arn = aws_iam_policy.for_query.arn
 }
+
+## API Gateway
+resource "aws_api_gateway_rest_api" "query_api" {
+  name = "MartaTweetQuery-API"
+  description = "API for querying retrieved Marta service alerts"
+}
+
+resource "aws_api_gateway_resource" "bus_alerts" {
+  parent_id   = aws_api_gateway_rest_api.query_api.root_resource_id
+  path_part   = "busalerts"
+  rest_api_id = aws_api_gateway_rest_api.query_api.id
+}
+
+resource "aws_api_gateway_method" "get_bus_alerts" {
+  authorization = "NONE"
+  http_method   = "GET"
+  resource_id   = aws_api_gateway_resource.bus_alerts.id
+  rest_api_id   = aws_api_gateway_rest_api.query_api.id
+  request_parameters = {
+    "method.request.querystring.route" = false
+  }
+}
+
+resource "aws_api_gateway_method_response" "get_bus_alerts_ok" {
+  rest_api_id = aws_api_gateway_rest_api.query_api.id
+  resource_id = aws_api_gateway_resource.bus_alerts.id
+  http_method = aws_api_gateway_method.get_bus_alerts.http_method
+  status_code = "200"
+  response_models = {
+    "application/json" = "Empty"
+  }
+}
+
+resource "aws_api_gateway_integration" "get_bus_alerts_lambda" {
+  rest_api_id             = aws_api_gateway_rest_api.query_api.id
+  resource_id             = aws_api_gateway_resource.bus_alerts.id
+  http_method             = aws_api_gateway_method.get_bus_alerts.http_method
+  integration_http_method = "POST"
+  type                    = "AWS"
+  uri                     = aws_lambda_function.query.invoke_arn
+  content_handling        = "CONVERT_TO_TEXT"
+  request_parameters = {
+    "integration.request.querystring.route" = "method.request.querystring.route"
+  }
+  request_templates = {
+    "application/json" = jsonencode({
+        route = "$input.params('route')"
+      }
+    )
+  }
+}
+
+resource "aws_api_gateway_integration_response" "get_bus_alerts_lambda_ok" {
+  rest_api_id = aws_api_gateway_rest_api.query_api.id
+  resource_id = aws_api_gateway_resource.bus_alerts.id
+  http_method = aws_api_gateway_method.get_bus_alerts.http_method
+  status_code = aws_api_gateway_method_response.get_bus_alerts_ok.status_code
+}
+
+resource "aws_api_gateway_deployment" "query_api" {
+  rest_api_id = aws_api_gateway_rest_api.query_api.id
+
+  /* triggers = {
+    redeployment = sha1(jsonencode([
+      aws_api_gateway_resource.bus_alerts.id,
+      aws_api_gateway_method.get_bus_alerts.id,
+      aws_api_gateway_method_response.get_bus_alerts_ok.id,
+      aws_api_gateway_integration.get_bus_alerts_lambda.id,
+      aws_api_gateway_integration_response.get_bus_alerts_lambda_ok.id
+    ]))
+  } */
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_api_gateway_stage" "default" {
+  deployment_id = aws_api_gateway_deployment.query_api.id
+  rest_api_id   = aws_api_gateway_rest_api.query_api.id
+  stage_name    = "default"
+  description   = "Default API stage"
+}
