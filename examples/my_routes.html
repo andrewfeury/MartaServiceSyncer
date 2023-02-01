@@ -88,7 +88,7 @@
                     substitute(div, "$date", new Date());
                 } else {
                     div.classList.add("routeNOK");
-                    substitute(div, "$body", alert.text);
+                    substitute(div, "$body", alert.text.replace(/\n/gi, "<br />"));
                     substitute(div, "$date", new Date(alert.lastUpdated));
                 }
             }).catch(console.log);
