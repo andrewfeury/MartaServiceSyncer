@@ -341,6 +341,14 @@ resource "aws_api_gateway_integration_response" "get_bus_alerts_lambda_ok" {
   status_code = aws_api_gateway_method_response.get_bus_alerts_ok.status_code
 }
 
+resource "aws_lambda_permission" "allow_agw_execution" {
+  statement_id  = "Execute${local.dbquery_name}FromAPIGW"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.query.arn
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "arn:aws:execute-api:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:${aws_api_gateway_rest_api.query_api.id}/*/${aws_api_gateway_method.get_bus_alerts.http_method}${aws_api_gateway_resource.bus_alerts.path}"
+}
+
 resource "aws_api_gateway_deployment" "query_api" {
   rest_api_id = aws_api_gateway_rest_api.query_api.id
 
