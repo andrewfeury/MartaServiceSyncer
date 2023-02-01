@@ -11,3 +11,9 @@ variable "api_sync_period_in_minutes" {
     error_message = "The longest possible polling period is 1 day (1440 minutes)"
   }
 }
+
+variable "cors_allowed_origins" {
+  description = "Allowed origins for CORS"
+  default = "*"
+  type = string
+}
